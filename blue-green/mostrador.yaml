@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mostrador-blue
+  namespace: anden
+  labels:
+    app: mostrador
+    color: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mostrador
+      color: blue
+  template:
+    metadata:
+      labels:
+        app: mostrador
+        color: blue
+    spec:
+      containers:
+        - name: mostrador
+          image: nginx:1.27
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mostrador-green
+  namespace: anden
+  labels:
+    app: mostrador
+    color: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mostrador
+      color: green
+  template:
+    metadata:
+      labels:
+        app: mostrador
+        color: green
+    spec:
+      containers:
+        - name: mostrador
+          image: nginx:1.27
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mostrador
+  namespace: anden
+  labels:
+    app: mostrador
+spec:
+  type: ClusterIP
+  selector:
+    app: mostrador
+    color: blue
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

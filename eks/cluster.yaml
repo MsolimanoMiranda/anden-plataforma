@@ -1,0 +1,24 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: anden
+  region: us-east-1
+  version: "1.32"
+iam:
+  withOIDC: true
+managedNodeGroups:
+  - name: oficio
+    instanceType: t3.small
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 4
+    volumeType: gp3
+    volumeSize: 20
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+  - name: aws-ebs-csi-driver
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator"]

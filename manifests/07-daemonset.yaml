@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: bitacora-nodo
+  namespace: anden
+  labels:
+    app: bitacora-nodo
+spec:
+  selector:
+    matchLabels:
+      app: bitacora-nodo
+  template:
+    metadata:
+      labels:
+        app: bitacora-nodo
+    spec:
+      containers:
+        - name: bitacora
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

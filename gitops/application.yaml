@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: anden
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TU_USUARIO/TU_REPO.git
+    targetRevision: main
+    path: projects/k8s-anden/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: anden
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mostrador
+  labels:
+    app: {{ .Release.Name }}-mostrador
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mostrador
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-mostrador
+    spec:
+      containers:
+        - name: mostrador
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 80
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

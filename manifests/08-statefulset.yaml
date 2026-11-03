@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: caja
+  namespace: anden
+  labels:
+    app: caja
+spec:
+  clusterIP: None
+  selector:
+    app: caja
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: caja
+  namespace: anden
+  labels:
+    app: caja
+spec:
+  serviceName: caja
+  replicas: 2
+  selector:
+    matchLabels:
+      app: caja
+  template:
+    metadata:
+      labels:
+        app: caja
+    spec:
+      containers:
+        - name: caja
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: datos
+              mountPath: /usr/share/nginx/html
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: datos
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: ebs-gp3
+        resources:
+          requests:
+            storage: 1Gi

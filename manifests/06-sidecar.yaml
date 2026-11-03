@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: puesto-con-sidecar
+  namespace: anden
+  labels:
+    app: puesto-sidecar
+spec:
+  containers:
+    - name: puesto
+      image: nginx:1.27
+      volumeMounts:
+        - name: bitacora
+          mountPath: /var/log/puesto
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+    - name: recolector
+      image: busybox:1.36
+      command: ["sh", "-c", "while true; do wc -l /var/log/puesto/* 2>/dev/null; sleep 30; done"]
+      volumeMounts:
+        - name: bitacora
+          mountPath: /var/log/puesto
+      resources:
+        requests:
+          cpu: 20m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+  volumes:
+    - name: bitacora
+      emptyDir: {}

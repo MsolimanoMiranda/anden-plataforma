@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cierre-caja
+  namespace: anden
+  labels:
+    app: cierre-caja
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: cierre-caja
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: cierre
+          image: busybox:1.36
+          command: ["echo", "cierre de caja listo"]
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: arqueo
+  namespace: anden
+  labels:
+    app: arqueo
+spec:
+  schedule: "0 23 * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: arqueo
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: arqueo
+              image: busybox:1.36
+              command: ["echo", "arqueo diario"]
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi

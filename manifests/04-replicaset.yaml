@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: cola
+  namespace: anden
+  labels:
+    app: cola
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cola
+  template:
+    metadata:
+      labels:
+        app: cola
+        rol: replica
+    spec:
+      containers:
+        - name: cola
+          image: nginx:1.27
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

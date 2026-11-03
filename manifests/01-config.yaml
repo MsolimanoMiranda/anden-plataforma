@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anden-config
+  namespace: anden
+  labels:
+    app: anden
+data:
+  puesto: "muelle"
+  ambiente: "demo"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: anden-secret
+  namespace: anden
+  labels:
+    app: anden
+type: Opaque
+stringData:
+  token: oficio-demo
