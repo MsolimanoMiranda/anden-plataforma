@@ -1,50 +1,89 @@
-# Andén en Kubernetes
+# Plataforma
 
-Manifiestos de estudio para un clúster Amazon EKS. No hay un clúster en esta máquina y no se aplica nada: un EKS real cobra por el control plane y por los nodos.
+El mapa de un clúster en Amazon EKS: desde el Pod hasta un corte azul-verde, con el paquete Helm y el sincronizado de Argo CD.
 
-Cada tema del temario está en un archivo concreto.
+## Concepto
+
+Cada tema del temario es un archivo que se puede leer y validar sin crear el clúster. Un EKS real cobra por el control plane y por los nodos, así que aquí no se aplica nada. `kubeconform` revisa los recursos nativos. El Service del mostrador apunta a `color: blue`; pasar a verde es cambiar ese selector.
+
+## Stack
+
+| Pieza | Para qué |
+| --- | --- |
+| Amazon EKS y eksctl | `eks/cluster.yaml`, con OIDC y el addon de EBS. |
+| kubectl | Aplicar, ver el rollout y deshacerlo. |
+| YAML | Pods, Services, workloads y almacenamiento. |
+| ClusterIP, NodePort, LoadBalancer | `manifests/03-services.yaml`. |
+| Namespaces, labels y selectors | `anden` y el `selector` de cada workload. |
+| ReplicaSet y Deployment | `04-replicaset.yaml` y `05-deployment.yaml`, con rolling update. |
+| Sidecar | `06-sidecar.yaml`, puesto y recolector. |
+| DaemonSet y StatefulSet | `07-daemonset.yaml` y `08-statefulset.yaml`. |
+| PV, PVC y EBS | `09-storage.yaml`, StorageClass `ebs-gp3`. |
+| ConfigMap, Secret y env | `01-config.yaml` y el Pod `puesto`. |
+| HPA y ResourceQuota | `10-escala.yaml`. |
+| Job y CronJob | `11-jobs.yaml`. |
+| Helm | Chart `helm/anden`. |
+| Argo CD | `gitops/application.yaml`. |
+| Prometheus y Grafana | `observability/prometheus-grafana.yaml`. |
+| Blue-green | `blue-green/mostrador.yaml`. |
+
+## Flujo
+
+```mermaid
+flowchart TD
+  git[Git del manifiesto]
+  argo[Argo CD]
+  ns[Namespace anden]
+  deploy[Deployment mostrador-roll]
+  pods[Pods]
+  svc[Service]
+  cliente[Cliente]
+  hpa[HPA]
+  prom[Prometheus]
+  grafana[Grafana]
+  azul[Deployment blue]
+  verde[Deployment green]
+  git --> argo --> ns --> deploy --> pods
+  hpa --> deploy
+  cliente --> svc --> pods
+  pods --> prom --> grafana
+  svc -->|selector color blue| azul
+  svc -.->|el corte cambia el selector| verde
+```
+
+## Mapa
 
 | Tema | Dónde |
 | --- | --- |
-| Arquitectura y conceptos | este README y `eks/cluster.yaml` |
-| Cluster EKS con eksctl | `eks/cluster.yaml` |
-| kubectl, AWS CLI, eksctl | comandos de abajo |
-| Pods, Services y YAML | `manifests/02-pod.yaml`, `manifests/03-services.yaml` |
-| ClusterIP, NodePort, LoadBalancer | `manifests/03-services.yaml` |
-| Namespaces, labels y selectors | `manifests/00-namespace.yaml` y el `selector` de cada workload |
-| ReplicaSets y Deployments | `manifests/04-replicaset.yaml`, `manifests/05-deployment.yaml` |
-| Rolling update y rollback | `strategy.rollingUpdate` en el Deployment `mostrador-roll` |
-| Pods con sidecar | `manifests/06-sidecar.yaml` |
-| DaemonSets y StatefulSets | `manifests/07-daemonset.yaml`, `manifests/08-statefulset.yaml` |
-| PV y PVC | `manifests/09-storage.yaml` |
-| Almacenamiento con EBS | StorageClass `ebs-gp3` y el volumen CSI |
-| ConfigMaps, Secrets y variables | `manifests/01-config.yaml` y el Pod `puesto` |
-| HPA y ResourceQuota | `manifests/10-escala.yaml` |
-| Jobs y CronJobs | `manifests/11-jobs.yaml` |
-| Helm | `helm/anden` |
-| GitOps con Argo CD | `gitops/application.yaml` |
-| Prometheus y Grafana | `observability/prometheus-grafana.yaml` |
-| Blue-green | `blue-green/mostrador.yaml` |
+| Cluster EKS | `eks/cluster.yaml` |
+| Pods y Services | `manifests/02-pod.yaml`, `manifests/03-services.yaml` |
+| ReplicaSet, Deployment y rolling update | `manifests/04-replicaset.yaml`, `manifests/05-deployment.yaml` |
+| Sidecar, DaemonSet y StatefulSet | `manifests/06-sidecar.yaml`, `07-daemonset.yaml`, `08-statefulset.yaml` |
+| PV, PVC y EBS | `manifests/09-storage.yaml` |
+| ConfigMap, Secret y HPA | `manifests/01-config.yaml`, `manifests/10-escala.yaml` |
+| Job y CronJob | `manifests/11-jobs.yaml` |
+| Helm, Argo CD, observabilidad y blue-green | `helm/anden`, `gitops/application.yaml`, `observability/`, `blue-green/` |
 
-## Validar sin clúster
+## Correr
+
+Desde esta carpeta, sin clúster:
 
 ```bash
 kubeconform -summary -kubernetes-version 1.32.0 -ignore-missing-schemas \
-  projects/k8s-anden/manifests projects/k8s-anden/blue-green projects/k8s-anden/observability projects/k8s-anden/gitops
-helm lint projects/k8s-anden/helm/anden
-helm template mostrador projects/k8s-anden/helm/anden | kubeconform -summary -kubernetes-version 1.32.0
+  manifests blue-green observability gitops
+helm lint helm/anden
+helm template mostrador helm/anden | kubeconform -summary -kubernetes-version 1.32.0
 ```
 
-`gitops/application.yaml` es un recurso de Argo CD. kubeconform lo deja pasar con `-ignore-missing-schemas` porque el esquema no viene en la instalación local.
+`gitops/application.yaml` es un recurso de Argo CD. kubeconform lo deja pasar con `-ignore-missing-schemas`.
 
-## Si algún día hay cuenta de AWS
+Con cuenta de AWS, y sabiendo que los nodos se facturan:
 
 ```bash
-eksctl create cluster -f projects/k8s-anden/eks/cluster.yaml
-kubectl apply -f projects/k8s-anden/manifests
+eksctl create cluster -f eks/cluster.yaml
+kubectl apply -f manifests
 kubectl -n anden rollout status deploy/mostrador-roll
 kubectl -n anden rollout undo deploy/mostrador-roll
 kubectl -n anden patch svc mostrador --type merge -p '{"spec":{"selector":{"color":"green"}}}'
+eksctl delete cluster -f eks/cluster.yaml
 ```
-
-El Service `mostrador` apunta a `color: blue`. El corte a verde es cambiar ese selector. `eksctl create cluster` crea nodos de pago: bórralo con `eksctl delete cluster -f projects/k8s-anden/eks/cluster.yaml` cuando termines.
